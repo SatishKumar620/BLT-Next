@@ -51,10 +51,13 @@ CREATE TABLE IF NOT EXISTS projects (
     type TEXT,
     reward TEXT DEFAULT 'N/A',
     bugs INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'Active',
+    description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
 -- Insert sample projects
-INSERT OR IGNORE INTO projects (id, name, type, reward, bugs) VALUES
-(1, 'Acme Corp', 'Web Application', '$500', 48),
-(2, 'ShopSafe', 'E-Commerce Platform', '$1,000', 73),
-(3, 'MedVault', 'Healthcare SaaS', '$5,000', 21);
+INSERT OR IGNORE INTO projects (id, name, type, reward, bugs, status, description) VALUES
+(1, 'Acme Corp', 'Web Application', '$500', 48, 'Active', 'Security testing for our main customer portal and API endpoints.'),
+(2, 'ShopSafe', 'E-Commerce Platform', '$1,000', 73, 'Active', 'Focus on payment flows, authentication, and XSS vulnerabilities.'),
+(3, 'MedVault', 'Healthcare SaaS', '$5,000', 21, 'Critical Only', 'Patient data security is paramount. Critical and high severity vulnerabilities rewarded.');

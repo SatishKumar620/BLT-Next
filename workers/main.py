@@ -312,7 +312,7 @@ async def handle_projects(request, env=None):
         return create_response({'error': 'Database binding missing'}, status=500, origin=request.headers.get('Origin'))
 
     try:
-        results = await env.DB.prepare("SELECT * FROM projects").all()
+        results = await env.DB.prepare("SELECT * FROM projects ORDER BY id ASC").all()
         projects = results.results
         
         # Return HTML for HTMX
@@ -326,10 +326,10 @@ async def handle_projects(request, env=None):
                         <div class="project-type">{p.type}</div>
                     </div>
                 </div>
-                <div class="project-reward">{p.get('reward', 'N/A')}</div>
+                <div class="project-reward">{p.reward if hasattr(p, 'reward') else 'N/A'}</div>
                 <div class="project-stats">
                     <div class="stat">
-                        <div class="stat-value">{p.get('bugs', 0)}</div>
+                        <div class="stat-value">{p.bugs if hasattr(p, 'bugs') else 0}</div>
                         <div class="stat-label">Bugs</div>
                     </div>
                     <div class="stat">
