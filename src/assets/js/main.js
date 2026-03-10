@@ -628,19 +628,25 @@ window.addEventListener('htmx:beforeRequest', (event) => {
 
     // Validate only if the request originates from the bug report form
     if (form && form.id === 'bugReportForm') {
+        const title = document.getElementById('bugTitle');
+        const url = document.getElementById('bugUrl');
+        const severity = document.getElementById('bugSeverity');
+        const type = document.getElementById('bugType');
         const description = document.getElementById('bugDescription');
         const errorBox = document.getElementById('custom-error-box');
 
-        // Check for empty input or strings containing only whitespace
-        if (description && description.value.trim().length === 0) {
-            // Cancel the request to prevent unnecessary 405 errors
+        const missing = [];
+        if (!title || title.value.trim().length === 0) missing.push('Title');
+        if (!url || url.value.trim().length === 0) missing.push('Affected URL');
+        if (!severity || severity.value === '') missing.push('Severity');
+        if (!type || type.value === '') missing.push('Bug Type');
+        if (!description || description.value.trim().length === 0) missing.push('Description');
+
+        if (missing.length > 0) {
             event.preventDefault();
-
             if (errorBox) {
-                // Display the custom Tailwind error alert
+                errorBox.textContent = `Please fill in: ${missing.join(', ')}`;
                 errorBox.classList.remove('hidden');
-
-                // Auto-hide the alert after 5 seconds for a cleaner UI
                 setTimeout(() => {
                     errorBox.classList.add('hidden');
                 }, 5000);

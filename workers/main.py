@@ -238,14 +238,25 @@ async def handle_bugs_list(request, env=None):
 
     if request.method == 'POST':
         try:
-            body = await request.json()
-            title = body.get('title')
-            description = body.get('description')
-            severity = body.get('severity')
-            
+            body = await request.form()
+            title = body.get('title', '').strip()
+            description = body.get('description', '').strip()
+            severity = body.get('severity', '').strip()
+            url = body.get('url', '').strip()
+            bug_type = body.get('type', '').strip()
+            steps = body.get('steps', '').strip()
+
+            # Server-side validation
+            if not title:
+                return create_response({'error': 'Title is required'}, status=400, origin=request.headers.get('Origin'))
+            if not description:
+                return create_response({'error': 'Description is required'}, status=400, origin=request.headers.get('Origin'))
+            if not severity:
+                return create_response({'error': 'Severity is required'}, status=400, origin=request.headers.get('Origin'))
+
             await env.DB.prepare(
-                "INSERT INTO bugs (title, description, severity, status) VALUES (?, ?, ?, ?)"
-            ).bind(title, description, severity, 'open').run()
+                "INSERT INTO bugs (title, description, severity, url, type, steps, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).bind(title, description, severity, url, bug_type, steps, 'open').run()
 
             # Mock success response in HTML for HTMX
             html = """
