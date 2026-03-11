@@ -239,32 +239,48 @@ async def handle_bugs_list(request, env=None):
     if request.method == 'POST':
         try:
             body = await request.formData()
-            title = (body.get('title') or '').strip()
-            description = (body.get('description') or '').strip()
-            severity = (body.get('severity') or '').strip()
-            url = (body.get('url') or '').strip()
-            bug_type = (body.get('type') or '').strip()
-            steps = (body.get('steps') or '').strip()
 
-            # Server-side validation
+            def get_text_field(form, name):
+                """Safely extract a text field from FormData, returning empty string for file or missing entries."""
+                val = form.get(name)
+                if val is None:
+                    return ''
+                try:
+                    return str(val).strip()
+                except Exception:
+                    return ''
+
+            title = get_text_field(body, 'title')
+            description = get_text_field(body, 'description')
+            severity = get_text_field(body, 'severity')
+            url = get_text_field(body, 'url')
+            bug_type = get_text_field(body, 'type')
+            steps = get_text_field(body, 'steps')
+
+            # Server-side validation — collect all errors at once
             ALLOWED_SEVERITIES = ('low', 'medium', 'high', 'critical', 'info')
-            if not title:
-                return create_response({'error': 'Title is required'}, status=400, origin=request.headers.get('Origin'))
-            if not description:
-                return create_response({'error': 'Description is required'}, status=400, origin=request.headers.get('Origin'))
-            if not severity:
-                return create_response({'error': 'Severity is required'}, status=400, origin=request.headers.get('Origin'))
-            if severity not in ALLOWED_SEVERITIES:
-                return create_response({'error': f'Severity must be one of: {", ".join(ALLOWED_SEVERITIES)}'}, status=400, origin=request.headers.get('Origin'))
-            if not url:
-                return create_response({'error': 'Affected URL is required'}, status=400, origin=request.headers.get('Origin'))
-            if not (url.startswith('http://') or url.startswith('https://')):
-                return create_response({'error': 'Affected URL must be a valid HTTP/HTTPS URL'}, status=400, origin=request.headers.get('Origin'))
-            if not bug_type:
-                return create_response({'error': 'Bug Type is required'}, status=400, origin=request.headers.get('Origin'))
             ALLOWED_BUG_TYPES = ('security', 'functional', 'ui', 'performance', 'other')
-            if bug_type not in ALLOWED_BUG_TYPES:
-                return create_response({'error': f'Bug Type must be one of: {", ".join(ALLOWED_BUG_TYPES)}'}, status=400, origin=request.headers.get('Origin'))
+            errors = {}
+
+            if not title:
+                errors['title'] = 'Title is required'
+            if not description:
+                errors['description'] = 'Description is required'
+            if not severity:
+                errors['severity'] = 'Severity is required'
+            elif severity not in ALLOWED_SEVERITIES:
+                errors['severity'] = f'Severity must be one of: {", ".join(ALLOWED_SEVERITIES)}'
+            if not url:
+                errors['url'] = 'Affected URL is required'
+            elif not (url.startswith('http://') or url.startswith('https://')):
+                errors['url'] = 'Affected URL must be a valid HTTP/HTTPS URL'
+            if not bug_type:
+                errors['bug_type'] = 'Bug Type is required'
+            elif bug_type not in ALLOWED_BUG_TYPES:
+                errors['bug_type'] = f'Bug Type must be one of: {", ".join(ALLOWED_BUG_TYPES)}'
+
+            if errors:
+                return create_response({'errors': errors}, status=400, origin=request.headers.get('Origin'))
 
             await env.DB.prepare(
                 "INSERT INTO bugs (title, description, severity, url, type, steps, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
