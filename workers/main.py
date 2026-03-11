@@ -238,13 +238,13 @@ async def handle_bugs_list(request, env=None):
 
     if request.method == 'POST':
         try:
-            body = await request.form()
-            title = body.get('title', '').strip()
-            description = body.get('description', '').strip()
-            severity = body.get('severity', '').strip()
-            url = body.get('url', '').strip()
-            bug_type = body.get('type', '').strip()
-            steps = body.get('steps', '').strip()
+            body = await request.formData()
+            title = (body.get('title') or '').strip()
+            description = (body.get('description') or '').strip()
+            severity = (body.get('severity') or '').strip()
+            url = (body.get('url') or '').strip()
+            bug_type = (body.get('type') or '').strip()
+            steps = (body.get('steps') or '').strip()
 
             # Server-side validation
             ALLOWED_SEVERITIES = ('low', 'medium', 'high', 'critical', 'info')
