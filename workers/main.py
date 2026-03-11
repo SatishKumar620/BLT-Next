@@ -45,14 +45,14 @@ def create_response(data, status=200, origin=None):
         headers=js_headers
     )
 
-def handle_html_response(html, origin=None):
+def handle_html_response(html_content, origin=None):
     """Create an HTML response with CORS headers"""
     js_headers = Headers.new()
     js_headers.set('Content-Type', 'text/html')
     js_headers.set('Access-Control-Allow-Origin', '*')
     
     return Response.new(
-        html,
+        html_content,
         status=200,
         headers=js_headers
     )
@@ -85,19 +85,19 @@ async def handle_stats(request, env=None):
         # Return HTML fragment for HTMX
         html = f"""
         <div class="stat-card">
-            <div class="stat-value">{stats.get('bugs_reported', 0)}</div>
+            <div class="stat-value">{html.escape(str(stats.get('bugs_reported', 0)))}</div>
             <div class="stat-label">Bugs Reported</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{stats.get('active_researchers', 0)}</div>
+            <div class="stat-value">{html.escape(str(stats.get('active_researchers', 0)))}</div>
             <div class="stat-label">Active Researchers</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{stats.get('rewards_distributed', '$0')}</div>
+            <div class="stat-value">{html.escape(str(stats.get('rewards_distributed', '$0')))}</div>
             <div class="stat-label">Rewards Distributed</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{stats.get('projects_protected', 0)}</div>
+            <div class="stat-value">{html.escape(str(stats.get('projects_protected', 0)))}</div>
             <div class="stat-label">Projects Protected</div>
         </div>
         """
@@ -292,7 +292,7 @@ async def handle_leaderboard(request, env=None):
             """ for item in leaderboard
         ])
         
-        html = f"""
+        leaderboard_html = f"""
         <div class="leaderboard-table">
             <div class="leaderboard-row leaderboard-header">
                 <div>Rank</div>
@@ -303,7 +303,7 @@ async def handle_leaderboard(request, env=None):
             {rows}
         </div>
         """
-        return handle_html_response(html, origin=request.headers.get('Origin'))
+        return handle_html_response(leaderboard_html, origin=request.headers.get('Origin'))
     except Exception as e:
         return create_response({'error': str(e)}, status=500, origin=request.headers.get('Origin'))
 
@@ -323,14 +323,14 @@ async def handle_projects(request, env=None):
                 <div class="project-header">
                     <div class="project-logo">🛡️</div>
                     <div class="project-info">
-                        <div class="project-name">{p.name}</div>
-                        <div class="project-type">{p.type}</div>
+                        <div class="project-name">{html.escape(str(p.name))}</div>
+                        <div class="project-type">{html.escape(str(p.type))}</div>
                     </div>
                 </div>
-                <div class="project-reward">{p.get('reward', 'N/A')}</div>
+                <div class="project-reward">{html.escape(str(p.get('reward', 'N/A')))}</div>
                 <div class="project-stats">
                     <div class="stat">
-                        <div class="stat-value">{p.get('bugs', 0)}</div>
+                        <div class="stat-value">{html.escape(str(p.get('bugs', 0)))}</div>
                         <div class="stat-label">Bugs</div>
                     </div>
                     <div class="stat">
