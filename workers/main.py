@@ -49,7 +49,9 @@ def handle_html_response(html_content, origin=None):
     """Create an HTML response with CORS headers"""
     js_headers = Headers.new()
     js_headers.set('Content-Type', 'text/html')
-    js_headers.set('Access-Control-Allow-Origin', '*')
+    cors = get_cors_headers(origin)
+    for k, v in cors.items():
+        js_headers.set(k, v)
     
     return Response.new(
         html_content,
@@ -327,10 +329,10 @@ async def handle_projects(request, env=None):
                         <div class="project-type">{html.escape(str(p.type))}</div>
                     </div>
                 </div>
-                <div class="project-reward">{html.escape(str(p.get('reward', 'N/A')))}</div>
+                <div class="project-reward">{html.escape(str(p.reward if hasattr(p, 'reward') and p.reward is not None else 'N/A'))}</div>
                 <div class="project-stats">
                     <div class="stat">
-                        <div class="stat-value">{html.escape(str(p.get('bugs', 0)))}</div>
+                        <div class="stat-value">{html.escape(str(p.bugs if hasattr(p, 'bugs') and p.bugs is not None else 0))}</div>
                         <div class="stat-label">Bugs</div>
                     </div>
                     <div class="stat">
