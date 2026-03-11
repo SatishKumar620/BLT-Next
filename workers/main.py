@@ -260,6 +260,9 @@ async def handle_bugs_list(request, env=None):
                 return create_response({'error': 'Affected URL is required'}, status=400, origin=request.headers.get('Origin'))
             if not bug_type:
                 return create_response({'error': 'Bug Type is required'}, status=400, origin=request.headers.get('Origin'))
+            ALLOWED_BUG_TYPES = ('security', 'functional', 'ui', 'performance', 'other')
+            if bug_type not in ALLOWED_BUG_TYPES:
+                return create_response({'error': f'Bug Type must be one of: {", ".join(ALLOWED_BUG_TYPES)}'}, status=400, origin=request.headers.get('Origin'))
 
             await env.DB.prepare(
                 "INSERT INTO bugs (title, description, severity, url, type, steps, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
