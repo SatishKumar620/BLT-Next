@@ -275,9 +275,9 @@ async def handle_bugs_list(request, env=None):
             elif not (url.startswith('http://') or url.startswith('https://')):
                 errors['url'] = 'Affected URL must be a valid HTTP/HTTPS URL'
             if not bug_type:
-                errors['bug_type'] = 'Bug Type is required'
+                errors['type'] = 'Bug Type is required'
             elif bug_type not in ALLOWED_BUG_TYPES:
-                errors['bug_type'] = f'Bug Type must be one of: {", ".join(ALLOWED_BUG_TYPES)}'
+                errors['type'] = f'Bug Type must be one of: {", ".join(ALLOWED_BUG_TYPES)}'
 
             if errors:
                 return create_response({'errors': errors}, status=400, origin=request.headers.get('Origin'))
