@@ -378,7 +378,9 @@ class UIComponents {
 // ===================================
 function setupEventHandlers() {
     // Login button
-    const loginBtn = document.getElementById('loginBtn');
+    const loginButtons = ['loginBtn', 'mobileLoginBtn'];
+    loginButtons.forEach(btnId => {
+    const loginBtn = document.getElementById(btnId);
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
             UIComponents.showModal(UIComponents.createLoginForm());
@@ -405,8 +407,9 @@ function setupEventHandlers() {
         });
     }
 
+    });  // end loginButtons.forEach
     // Signup buttons
-    const signupButtons = ['signupBtn', 'ctaSignupBtn'];
+    const signupButtons = ['signupBtn', 'ctaSignupBtn', 'mobileSignupBtn'];
     signupButtons.forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
