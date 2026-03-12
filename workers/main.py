@@ -85,7 +85,7 @@ async def handle_stats(request, env=None):
             return create_response({'error': 'No stats found'}, status=404, origin=request.headers.get('Origin'))
 
         # Return HTML fragment for HTMX
-        html = f"""
+        stats_html = f"""
         <div class="stat-card">
             <div class="stat-value">{html.escape(str(stats.get('bugs_reported', 0)))}</div>
             <div class="stat-label">Bugs Reported</div>
@@ -103,7 +103,7 @@ async def handle_stats(request, env=None):
             <div class="stat-label">Projects Protected</div>
         </div>
         """
-        return handle_html_response(html, origin=request.headers.get('Origin'))
+        return handle_html_response(stats_html, origin=request.headers.get('Origin'))
     except Exception as e:
         print(f"D1 Query Error: {e}")
         return create_response({'error': str(e)}, status=500, origin=request.headers.get('Origin'))
