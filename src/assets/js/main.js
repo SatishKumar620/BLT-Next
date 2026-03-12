@@ -377,6 +377,15 @@ class UIComponents {
 // Event Handlers
 // ===================================
 function setupEventHandlers() {
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) mobileMenu.classList.toggle('hidden');
+        });
+    }
+
     // Login button
     const loginButtons = ['loginBtn', 'mobileLoginBtn'];
     loginButtons.forEach(btnId => {
