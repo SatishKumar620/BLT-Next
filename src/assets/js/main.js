@@ -407,7 +407,7 @@ function setupEventHandlers() {
         });
     }
 
-    });  // end loginButtons.forEach
+    });
     // Signup buttons
     const signupButtons = ['signupBtn', 'ctaSignupBtn', 'mobileSignupBtn'];
     signupButtons.forEach(btnId => {
