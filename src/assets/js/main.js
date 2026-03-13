@@ -16,6 +16,25 @@ const CONFIG = {
     ENABLE_ANALYTICS: true,
 };
 
+function getAuthToken() {
+    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
+function persistAuthToken(token, remember = true) {
+    if (remember) {
+        localStorage.setItem('authToken', token);
+        sessionStorage.removeItem('authToken');
+    } else {
+        sessionStorage.setItem('authToken', token);
+        localStorage.removeItem('authToken');
+    }
+}
+
+function clearAuthToken() {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+}
+
 // ===================================
 // State Management
 // ===================================
@@ -69,7 +88,7 @@ class APIClient {
         };
 
         // Add auth token if available
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (token) {
             defaultOptions.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -145,12 +164,12 @@ class AuthModule {
         this.state = appState;
     }
 
-    async login(email, password) {
+    async login(email, password, remember = false) {
         try {
             const response = await this.api.post('/auth/login', { email, password });
 
             if (response.token) {
-                localStorage.setItem('authToken', response.token);
+                persistAuthToken(response.token, remember);
                 this.state.setUser(response.user);
                 return { success: true, user: response.user };
             }
@@ -166,7 +185,7 @@ class AuthModule {
             const response = await this.api.post('/auth/signup', userData);
 
             if (response.token) {
-                localStorage.setItem('authToken', response.token);
+                persistAuthToken(response.token, true);
                 this.state.setUser(response.user);
                 return { success: true, user: response.user };
             }
@@ -183,14 +202,14 @@ class AuthModule {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            localStorage.removeItem('authToken');
+            clearAuthToken();
             this.state.setUser(null);
             this.api.clearCache();
         }
     }
 
     async checkAuth() {
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) {
             return false;
         }
@@ -203,7 +222,7 @@ class AuthModule {
             }
         } catch (error) {
             // Token invalid, clear it
-            localStorage.removeItem('authToken');
+            clearAuthToken();
         }
 
         return false;

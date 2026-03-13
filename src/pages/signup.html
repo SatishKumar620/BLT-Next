@@ -137,13 +137,15 @@
                 required 
                 minlength="8"
                 placeholder="••••••••"
-                oninput="updatePasswordStrength(this.value); validateSignupField('password')"
+                oninput="updatePasswordStrength(this.value); validateSignupField('password'); const cp = document.getElementById('confirmPassword'); const cpe = document.getElementById('confirmPasswordError'); if ((cp && cp.value) || (cpe && !cpe.classList.contains('hidden'))) validateSignupField('confirmPassword')"
                 onblur="validateSignupField('password')"
                 class="w-full pl-10 pr-12 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
               />
               <button 
                 type="button" 
                 onclick="togglePassword('password', this)"
+                aria-label="Show password"
+                aria-pressed="false"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <svg class="w-5 h-5 hidden" id="passwordEyeOff" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,8 +309,15 @@
       
       const signupForm = document.getElementById('signupForm');
       if (signupForm) {
+        let isSubmitting = false;
         signupForm.addEventListener('submit', async (e) => {
           e.preventDefault();
+
+          if (isSubmitting) {
+            return;
+          }
+
+          const submitButton = signupForm.querySelector('button[type="submit"]');
           
           const fullnameValid = validateSignupField('fullname');
           const emailValid = validateSignupField('email');
@@ -331,20 +340,30 @@
             if (errorEl) { errorEl.textContent = 'Passwords do not match'; errorEl.classList.remove('hidden'); }
             return;
           }
+
+          isSubmitting = true;
+          if (submitButton) submitButton.disabled = true;
           
           const userData = {
             username: formData.get('fullname'),
             email: formData.get('email'),
             password: password,
           };
-          
-          if (window.bltApp?.auth) {
-            const result = await window.bltApp.auth.signup(userData);
-            if (result.success) {
-              window.location.href = '../index.html';
+
+          try {
+            if (window.bltApp?.auth) {
+              const result = await window.bltApp.auth.signup(userData);
+              if (result.success) {
+                window.location.href = '../index.html';
+              } else {
+                alert(result.error || 'Signup failed');
+              }
             } else {
-              alert(result.error || 'Signup failed');
+              alert('Signup is unavailable right now');
             }
+          } finally {
+            isSubmitting = false;
+            if (submitButton) submitButton.disabled = false;
           }
         });
       }
@@ -355,6 +374,8 @@
       if (!input) return;
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
+      button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
       const eyeIcon = button.querySelector('#' + inputId + 'Eye');
       const eyeOffIcon = button.querySelector('#' + inputId + 'EyeOff');
       if (eyeIcon && eyeOffIcon) {

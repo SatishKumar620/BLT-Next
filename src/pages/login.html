@@ -103,7 +103,6 @@
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-              <a href="#" class="text-sm text-red-500 hover:text-red-600 font-medium transition-colors">Forgot password?</a>
             </div>
             <div class="relative">
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -124,6 +123,8 @@
               <button 
                 type="button" 
                 onclick="togglePassword('password', this)"
+                aria-label="Show password"
+                aria-pressed="false"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <svg class="w-5 h-5 hidden" id="passwordEyeOff" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,9 +253,10 @@
           const formData = new FormData(loginForm);
           const email = formData.get('email');
           const password = formData.get('password');
+          const remember = document.querySelector('input[name="remember"]')?.checked ?? false;
           
           if (window.bltApp?.auth) {
-            const result = await window.bltApp.auth.login(email, password);
+            const result = await window.bltApp.auth.login(email, password, remember);
             if (result.success) {
               window.location.href = '../index.html';
             } else {
@@ -270,6 +272,8 @@
       if (!input) return;
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
+      button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
       const eyeIcon = button.querySelector('#' + inputId + 'Eye');
       const eyeOffIcon = button.querySelector('#' + inputId + 'EyeOff');
       if (eyeIcon && eyeOffIcon) {
