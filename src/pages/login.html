@@ -127,12 +127,45 @@
       const email = formData.get('email');
       const password = formData.get('password');
 
-      // TODO: Implement actual login logic
-      console.log('Login attempt:', { email });
-      
-      // Placeholder: Show success message and redirect
-      alert('Login functionality will be implemented with backend integration.');
-      // window.location.href = '../index.html';
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          let message = 'Login failed. Please check your credentials and try again.';
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              message = errorData.message;
+            }
+          } catch (_) {
+            // Ignore JSON parse errors and use default message
+          }
+          alert(message);
+          return;
+        }
+
+        // If the backend returns a token or user info, store it as needed
+        try {
+          const data = await response.json();
+          if (data && data.token) {
+            localStorage.setItem('authToken', data.token);
+          }
+        } catch (_) {
+          // Response might not have a JSON body; proceed with redirect regardless
+        }
+
+        // Redirect to the main page on successful login
+        window.location.href = '../index.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('An unexpected error occurred while trying to log you in. Please try again.');
+      }
     });
   </script>
 </body>
