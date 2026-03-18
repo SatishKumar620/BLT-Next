@@ -219,9 +219,10 @@
     });
 
     function populateProfile(user) {
+      // Use null/undefined check to preserve valid zero values
       const setEl = (id, val) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = val || '—';
+        if (el) el.textContent = (val != null && val !== '') ? val : '—';
       };
 
       setEl('profileUsername', user.username);
@@ -245,7 +246,11 @@
     async function loadBugReports(user) {
       const tbody = document.getElementById('bugReportsTable');
       try {
-        const res = await fetch('/api/bugs?reporter=' + (user.id || ''));
+        // Note: server-side reporter scoping is tracked in a separate issue.
+        // This request passes the authenticated user's id as a hint.
+        const res = await fetch('/api/bugs?reporter=' + encodeURIComponent(user.id || ''), {
+          headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }
+        });
         const data = await res.json();
         const bugs = data.bugs || data.data || [];
 
