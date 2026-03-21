@@ -304,12 +304,16 @@ async def handle_bugs_list(request, env=None):
             severity = body.get('severity')
             
             VALID_SEVERITIES = {'low', 'medium', 'high', 'critical', 'info'}
+
             if not title:
-                return create_response({'error': 'title is required'}, status=400, origin=request.headers.get('Origin'))
-            if severity and severity not in VALID_SEVERITIES:
-                return create_response(
-                    {'error': f"Invalid severity. Must be one of: {', '.join(sorted(VALID_SEVERITIES))}"},
-                    status=400,
+                return handle_html_response(
+                    '<div class="error-banner" style="background:#fef2f2;color:#991b1b;padding:1rem;border-radius:0.5rem;border:1px solid #fca5a5;">Title is required.</div>',
+                    origin=request.headers.get('Origin')
+                )
+            if severity is not None and severity.strip() not in VALID_SEVERITIES:
+                valid = ', '.join(sorted(VALID_SEVERITIES))
+                return handle_html_response(
+                    f'<div class="error-banner" style="background:#fef2f2;color:#991b1b;padding:1rem;border-radius:0.5rem;border:1px solid #fca5a5;">Invalid severity. Must be one of: {valid}.</div>',
                     origin=request.headers.get('Origin')
                 )
 
