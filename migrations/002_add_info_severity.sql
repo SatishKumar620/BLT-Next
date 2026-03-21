@@ -1,6 +1,8 @@
 -- Migration: Add 'info' to severity CHECK constraint
 -- Allows "Informational" severity bugs to be reported without being silently rejected.
 
+BEGIN;
+
 ALTER TABLE bugs RENAME TO bugs_old;
 
 CREATE TABLE IF NOT EXISTS bugs (
@@ -16,6 +18,10 @@ CREATE TABLE IF NOT EXISTS bugs (
     FOREIGN KEY (reporter_id) REFERENCES users(id)
 );
 
-INSERT INTO bugs SELECT * FROM bugs_old;
+INSERT INTO bugs (id, title, description, severity, status, reporter_id, reward_amount, created_at, updated_at)
+  SELECT id, title, description, severity, status, reporter_id, reward_amount, created_at, updated_at
+  FROM bugs_old;
 
 DROP TABLE bugs_old;
+
+COMMIT;
