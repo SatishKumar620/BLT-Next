@@ -303,6 +303,16 @@ async def handle_bugs_list(request, env=None):
             description = body.get('description')
             severity = body.get('severity')
             
+            VALID_SEVERITIES = {'low', 'medium', 'high', 'critical', 'info'}
+            if not title:
+                return create_response({'error': 'title is required'}, status=400, origin=request.headers.get('Origin'))
+            if severity and severity not in VALID_SEVERITIES:
+                return create_response(
+                    {'error': f"Invalid severity. Must be one of: {', '.join(sorted(VALID_SEVERITIES))}"},
+                    status=400,
+                    origin=request.headers.get('Origin')
+                )
+
             await env.DB.prepare(
                 "INSERT INTO bugs (title, description, severity, status) VALUES (?, ?, ?, ?)"
             ).bind(title, description, severity, 'open').run()
@@ -317,7 +327,8 @@ async def handle_bugs_list(request, env=None):
             """
             return handle_html_response(html, origin=request.headers.get('Origin'))
         except Exception as e:
-            return create_response({'error': str(e)}, status=500, origin=request.headers.get('Origin'))
+            print(f"Error submitting bug: {e}")
+            return create_response({'error': 'Failed to submit bug report. Please try again.'}, status=500, origin=request.headers.get('Origin'))
 
     # GET case (list bugs)
     try:
