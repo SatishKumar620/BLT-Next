@@ -310,7 +310,9 @@ async def handle_bugs_list(request, env=None):
                     '<div class="error-banner" style="background:#fef2f2;color:#991b1b;padding:1rem;border-radius:0.5rem;border:1px solid #fca5a5;">Title is required.</div>',
                     origin=request.headers.get('Origin')
                 )
-            if severity is not None and severity.strip() not in VALID_SEVERITIES:
+            # Normalize severity — treat None and '' as absent
+            severity = severity.strip() if severity else None
+            if severity is not None and severity not in VALID_SEVERITIES:
                 valid = ', '.join(sorted(VALID_SEVERITIES))
                 return handle_html_response(
                     f'<div class="error-banner" style="background:#fef2f2;color:#991b1b;padding:1rem;border-radius:0.5rem;border:1px solid #fca5a5;">Invalid severity. Must be one of: {valid}.</div>',
