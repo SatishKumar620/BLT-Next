@@ -1,7 +1,8 @@
-from js import Response, Headers, URL
+from js import Response, Headers, URL, Request
 import json
 import hashlib
 from datetime import datetime
+from workers import WorkerEntrypoint #Added this new import to use the modern class-based structure for Cloudflare Workers. 
 
 # ===================================
 # Configuration
@@ -11,6 +12,25 @@ ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:8000',
 ]
+
+FRONTEND_SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'Strict-Transport-Security': 'max-age=31536000',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-XSS-Protection': '0',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    'Cross-Origin-Resource-Policy': 'same-site',
+    'X-Permitted-Cross-Domain-Policies': 'none',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+}
+
+def apply_security_headers(js_headers):
+    """Attach the canonical frontend security headers to a Headers object."""
+    for key, value in FRONTEND_SECURITY_HEADERS.items():
+        js_headers.set(key, value)
+    return js_headers
 
 # ===================================
 # CORS Helpers
@@ -33,10 +53,7 @@ def create_response(data, status=200, origin=None):
     """Create a JSON response with CORS headers"""
     js_headers = Headers.new()
     js_headers.set('Content-Type', 'application/json')
-    js_headers.set('X-Content-Type-Options', 'nosniff')
-    js_headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-    js_headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'")
-    js_headers.set('X-Frame-Options', 'DENY')
+    apply_security_headers(js_headers)
     
     cors = get_cors_headers(origin)
     for k, v in cors.items():
@@ -52,11 +69,11 @@ def handle_html_response(html, origin=None):
     """Create an HTML response with CORS headers"""
     js_headers = Headers.new()
     js_headers.set('Content-Type', 'text/html')
-    js_headers.set('Access-Control-Allow-Origin', '*')
-    js_headers.set('X-Content-Type-Options', 'nosniff')
-    js_headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-    js_headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'")
-    js_headers.set('X-Frame-Options', 'DENY')
+    # Allowed origins rather than using a wildcard
+    cors = get_cors_headers(origin)
+    for k, v in cors.items():
+        js_headers.set(k, v)
+    apply_security_headers(js_headers)
     
     return Response.new(
         html,
@@ -70,6 +87,18 @@ def handle_cors_preflight(origin):
         '',
         status=204,
         headers=Headers.new(get_cors_headers(origin))
+    )
+
+
+def apply_frontend_security_headers(asset_response):
+    """Attach security headers to static asset responses served by ASSETS."""
+    js_headers = Headers.new(asset_response.headers)
+    apply_security_headers(js_headers)
+
+    return Response.new(
+        asset_response.body,
+        status=asset_response.status,
+        headers=js_headers
     )
 
 # ===================================
@@ -421,8 +450,11 @@ async def route_request(request, env):
             fetch_url = request.url
             if path == '/':
                 fetch_url = str(url).replace(path, '/index.html')
-            
-            return await env.ASSETS.fetch(fetch_url)
+
+            # Use a Request object to preserve original method and headers
+            asset_request = Request.new(fetch_url, { 'method': request.method, 'headers': request.headers })
+            asset_response = await env.ASSETS.fetch(asset_request)
+            return apply_frontend_security_headers(asset_response)
         except Exception as e:
             print(f"Assets Error: {e}")
     
@@ -432,12 +464,13 @@ async def route_request(request, env):
 # Main Entry Point
 # ===================================
 
-async def on_fetch(request, env):
-    """Main entry point for Cloudflare Worker"""
-    try:
-        return await route_request(request, env)
-    except Exception as e:
-        return create_response({
-            'error': 'Internal server error',
-            'message': str(e)
-        }, status=500, origin=request.headers.get('Origin'))
+class Default(WorkerEntrypoint):
+    async def fetch(self, request):
+        """Main entry point for Cloudflare Worker"""
+        try:
+            return await route_request(request, self.env)
+        except Exception as e:
+            return create_response({
+                'error': 'Internal server error',
+                'message': str(e)
+            }, status=500, origin=request.headers.get('Origin'))
